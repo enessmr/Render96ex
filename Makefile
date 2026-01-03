@@ -1,4 +1,3 @@
-
 # Makefile to rebuild SM64 split image
 
 ### Default target ###
@@ -156,21 +155,29 @@ GRUCODE_ASFLAGS := $(GRUCODE_ASFLAGS) --defsym $(GRUCODE_DEF)=1
 # Default build is for PC now
 VERSION_CFLAGS := $(VERSION_CFLAGS) -DNON_MATCHING -DAVOID_UB -Wno-incompatible-pointer-types -Wno-int-conversion
 
+# Create filtered version for Python scripts (without problematic warnings)
+VERSION_CFLAGS_CLEAN := $(filter-out -Wno-incompatible-pointer-types -Wno-int-conversion,$(VERSION_CFLAGS))
+export VERSION_CFLAGS_CLEAN
+
 ifeq ($(TARGET_RPI),1) # Define RPi to change SDL2 title & GLES2 hints
       VERSION_CFLAGS += -DUSE_GLES
+      VERSION_CFLAGS_CLEAN += -DUSE_GLES
 endif
 
 ifeq ($(TARGET_SWITCH),1)
       VERSION_CFLAGS += -DTARGET_SWITCH -DUSE_GLES -DMA_NO_RUNTIME_LINKING -DMA_ENABLE_ONLY_SPECIFIC_BACKENDS -DMA_NO_PTHREAD_IN_HEADER
+      VERSION_CFLAGS_CLEAN += -DTARGET_SWITCH -DUSE_GLES -DMA_NO_RUNTIME_LINKING -DMA_ENABLE_ONLY_SPECIFIC_BACKENDS -DMA_NO_PTHREAD_IN_HEADER
 endif
 ifeq ($(OSX_BUILD),1) # Modify GFX & SDL2 for OSX GL
      VERSION_CFLAGS += -DOSX_BUILD
+     VERSION_CFLAGS_CLEAN += -DOSX_BUILD
 endif
 
 VERSION_ASFLAGS := --defsym AVOID_UB=1
 
 ifeq ($(TARGET_WEB),1)
   VERSION_CFLAGS := $(VERSION_CFLAGS) -DTARGET_WEB -DUSE_GLES
+  VERSION_CFLAGS_CLEAN := $(VERSION_CFLAGS_CLEAN) -DTARGET_WEB -DUSE_GLES
 endif
 
 # Check backends
@@ -501,6 +508,10 @@ endif
 
 PYTHON := python3
 SDLCONFIG := $(SDLCROSS)sdl2-config
+
+# Create clean CFLAGS for Python stages (without problematic warnings)
+CFLAGS_CLEAN := $(filter-out -Wno-incompatible-pointer-types -Wno-int-conversion,$(CFLAGS))
+PYTHON := CFLAGS="$(CFLAGS_CLEAN)" python3
 
 # configure backend flags
 
